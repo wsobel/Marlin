@@ -90,8 +90,6 @@ extern "C" void GpioDisableInt(uint32_t port, uint32_t pin);
 #define strcpy_P strcpy
 #define snprintf_P snprintf
 
-void serialprintPGM(const char *);
-
 // Time functions
 extern "C" {
 void delay(int milis);

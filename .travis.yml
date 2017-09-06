@@ -10,7 +10,7 @@ notifications:
 
 # Cache PlatformIO packages using Travis CI container-based infrastructure
 sudo: false
-cache: 
+cache:
   pip: true
   directories:
   - "~/.platformio"
@@ -25,7 +25,7 @@ before_install:
   #
   # Publish the buildroot script folder
   - chmod +x ${TRAVIS_BUILD_DIR}/buildroot/bin/*
-  - export PATH=${TRAVIS_BUILD_DIR}/buildroot/bin/:${PATH} 
+  - export PATH=${TRAVIS_BUILD_DIR}/buildroot/bin/:${PATH}
 
 install:
   - pip install -U platformio
@@ -36,19 +36,20 @@ before_script:
   - cd ${TRAVIS_BUILD_DIR}
   #
   # Generate custom version include
-  - generate_version_header_for_marlin ${TRAVIS_BUILD_DIR}/Marlin
-  - cat ${TRAVIS_BUILD_DIR}/Marlin/_Version.h
+  - generate_version_header_for_marlin ${TRAVIS_BUILD_DIR}/Marlin/src/inc
+  - cat ${TRAVIS_BUILD_DIR}/Marlin/src/inc/_Version.h
   #
 script:
   #
   # Backup Configuration.h, Configuration_adv.h, and pins_RAMPS.h
   #
-  - cp Marlin/Configuration.h Marlin/Configuration.h.backup
-  - cp Marlin/Configuration_adv.h Marlin/Configuration_adv.h.backup
-  - cp Marlin/pins_RAMPS.h Marlin/pins_RAMPS.h.backup
+  - cp Marlin/src/config/Configuration.h Marlin/src/config/Configuration.h.backup
+  - cp Marlin/src/config/Configuration_adv.h Marlin/src/config/Configuration_adv.h.backup
+  - cp Marlin/src/pins/pins_RAMPS.h Marlin/src/pins/pins_RAMPS.h.backup
   #
   # Build with the default configurations
   #
+  - restore_configs
   - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
   #
   # Test 2 extruders (one MAX6675) and heated bed on basic RAMPS 1.4
@@ -60,7 +61,7 @@ script:
   - opt_set TEMP_SENSOR_0 -2
   - opt_set TEMP_SENSOR_1 1
   - opt_set TEMP_SENSOR_BED 1
-  - opt_enable PIDTEMPBED FIX_MOUNTED_PROBE Z_SAFE_HOMING ARC_P_CIRCLES CNC_WORKSPACE_PLANES
+  - opt_enable PIDTEMPBED Z_SAFE_HOMING ARC_P_CIRCLES CNC_WORKSPACE_PLANES
   - opt_enable REPRAP_DISCOUNT_SMART_CONTROLLER SDSUPPORT EEPROM_SETTINGS
   - opt_enable BLINKM PCA9632 RGB_LED NEOPIXEL_RGBW_LED
   - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
@@ -68,7 +69,7 @@ script:
   #
   # ...with AUTO_BED_LEVELING_LINEAR, Z_MIN_PROBE_REPEATABILITY_TEST, and DEBUG_LEVELING_FEATURE
   #
-  - opt_enable AUTO_BED_LEVELING_LINEAR Z_MIN_PROBE_REPEATABILITY_TEST DEBUG_LEVELING_FEATURE
+  - opt_enable AUTO_BED_LEVELING_LINEAR BLTOUCH Z_MIN_PROBE_REPEATABILITY_TEST DEBUG_LEVELING_FEATURE
   - opt_enable_adv FWRETRACT MAX7219_DEBUG
   - opt_set ABL_GRID_POINTS_X 16
   - opt_set ABL_GRID_POINTS_Y 16
@@ -77,8 +78,8 @@ script:
   # Test a simple build of AUTO_BED_LEVELING_UBL
   #
   - restore_configs
-  - opt_enable AUTO_BED_LEVELING_UBL UBL_G26_MESH_EDITING ENABLE_LEVELING_FADE_HEIGHT FIX_MOUNTED_PROBE EEPROM_SETTINGS G3D_PANEL
-  - opt_enable_adv CUSTOM_USER_MENUS I2C_POSITION_ENCODERS BABYSTEPPING
+  - opt_enable AUTO_BED_LEVELING_UBL UBL_G26_MESH_EDITING ENABLE_LEVELING_FADE_HEIGHT BLTOUCH EEPROM_SETTINGS G3D_PANEL
+  - opt_enable_adv CUSTOM_USER_MENUS I2C_POSITION_ENCODERS BABYSTEPPING BABYSTEP_ZPROBE_OFFSET
   - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
   #
   # Test a Sled Z Probe
@@ -292,7 +293,7 @@ script:
   #
   # Delta Config (generic) + ABL bilinear + PROBE_MANUALLY
   - use_example_configs delta/generic
-  - opt_enable REPRAP_DISCOUNT_SMART_CONTROLLER DELTA_CALIBRATION_MENU AUTO_BED_LEVELING_BILINEAR PROBE_MANUALLY
+  - opt_enable REPRAP_DISCOUNT_SMART_CONTROLLER DELTA_AUTO_CALIBRATION DELTA_CALIBRATION_MENU AUTO_BED_LEVELING_BILINEAR PROBE_MANUALLY
   - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
   #
   # Delta Config (generic) + UBL + ALLEN_KEY + OLED_PANEL_TINYBOY2 + EEPROM_SETTINGS
@@ -334,9 +335,9 @@ script:
   - export TEST_PLATFORM="-e teensy35"
   - restore_configs
   - opt_set MOTHERBOARD BOARD_TEENSY35_36
-  - cp Marlin/Configuration.h Marlin/Configuration.h.backup
-  - cp Marlin/Configuration_adv.h Marlin/Configuration_adv.h.backup
-  - cp Marlin/pins_RAMPS.h Marlin/pins_RAMPS.h.backup
+  - cp Marlin/src/config/Configuration.h Marlin/src/config/Configuration.h.backup
+  - cp Marlin/src/config/Configuration_adv.h Marlin/src/config/Configuration_adv.h.backup
+  - cp Marlin/src/pins/pins_RAMPS.h Marlin/src/pins/pins_RAMPS.h.backup
   #
   # Test Teensy3.5 with default config
   #
@@ -423,7 +424,7 @@ script:
   #- opt_set TEMP_SENSOR_1 1
   #- opt_enable USE_XMAX_PLUG
   #- opt_enable_adv DUAL_X_CARRIAGE
-  #- build_marlin_teensy35
+  #- build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
   #
   # Test SWITCHING_EXTRUDER
   #
@@ -496,93 +497,4 @@ script:
   #
   - restore_configs
   - opt_enable NOZZLE_CLEAN_FEATURE
-  - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
-  #
-  #
-  ######## STANDARD LCD/PANELS ##############
-  #
-  # ULTRA_LCD
-  #
-  - restore_configs
-  - opt_enable ULTRA_LCD
-  - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
-  #
-  # DOGLCD
-  #
-  - restore_configs
-  - opt_enable DOGLCD
-  - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
-  #
-  # ULTIMAKERCONTROLLER
-  #
-  - restore_configs
-  - opt_enable ULTIMAKERCONTROLLER
-  - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
-  #
-  # MAKRPANEL
-  # Needs to use Melzi and Sanguino hardware
-  #
-  #- restore_configs
-  #- opt_enable MAKRPANEL
-  #- build_marlin
-  #
-  # REPRAP_DISCOUNT_SMART_CONTROLLER, SDSUPPORT, and BABYSTEPPING
-  #
-  - restore_configs
-  - opt_enable REPRAP_DISCOUNT_SMART_CONTROLLER SDSUPPORT BABYSTEPPING
-  - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
-  #
-  # G3D_PANEL
-  #
-  - restore_configs
-  - opt_enable G3D_PANEL SDSUPPORT
-  - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
-  #
-  # REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER
-  #
-  - restore_configs
-  - opt_enable REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER SDSUPPORT
-  - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
-  #
-  # REPRAPWORLD_KEYPAD
-  #
-  # Cant find configuration details to get it to compile
-  #- restore_configs
-  #- opt_enable ULTRA_LCD REPRAPWORLD_KEYPAD REPRAPWORLD_KEYPAD_MOVE_STEP
-  #- build_marlin
-  #
-  # RA_CONTROL_PANEL
-  #
-  - restore_configs
-  - opt_enable RA_CONTROL_PANEL
-  - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
-  #
-  ######## I2C LCD/PANELS ##############
-  #
-  # !!!ATTENTION!!!
-  # Most I2C configurations are failing at the moment because they require
-  # a different Liquid Crystal library "LiquidTWI2".
-  #
-  # LCD_I2C_SAINSMART_YWROBOT
-  #
-  #- restore_configs
-  #- opt_enable LCD_I2C_SAINSMART_YWROBOT
-  #- build_marlin
-  #
-  # LCD_I2C_PANELOLU2
-  #
-  #- restore_configs
-  #- opt_enable LCD_I2C_PANELOLU2
-  #- build_marlin
-  #
-  # LCD_I2C_VIKI
-  #
-  #- restore_configs
-  #- opt_enable LCD_I2C_VIKI
-  #- build_marlin
-  #
-  # LCM1602
-  #
-  - restore_configs
-  - opt_enable LCM1602
   - build_marlin_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}

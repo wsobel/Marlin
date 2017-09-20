@@ -58,15 +58,15 @@
 //===========================================================================
 //============================= DELTA Printer ===============================
 //===========================================================================
-// For a Delta printer replace the configuration files with the files in the
-// example_configurations/delta directory.
+// For a Delta printer start with one of the configuration files in the
+// example_configurations/delta directory and customize for your machine.
 //
 
 //===========================================================================
 //============================= SCARA Printer ===============================
 //===========================================================================
-// For a Scara printer replace the configuration files with the files in the
-// example_configurations/SCARA directory.
+// For a SCARA printer start with the configuration files in
+// example_configurations/SCARA and customize for your machine.
 //
 
 // @section info
@@ -76,8 +76,8 @@
 // build by the user have been successfully uploaded into firmware.
 #define STRING_CONFIG_H_AUTHOR "(none, default config)" // Who made the changes.
 #define SHOW_BOOTSCREEN
-#define STRING_SPLASH_LINE1 "SkyNet3D V2.4.5 (GH)" // will be shown during bootup in line 1
-#define STRING_SPLASH_LINE2 "Marlin " SHORT_BUILD_VERSION // will be shown during bootup in line 2
+#define STRING_SPLASH_LINE1 SHORT_BUILD_VERSION // will be shown during bootup in line 1
+#define STRING_SPLASH_LINE2 WEBSITE_URL         // will be shown during bootup in line 2
 
 //
 // *** VENDORS PLEASE READ *****************************************************
@@ -138,11 +138,33 @@
 // For Cyclops or any "multi-extruder" that shares a single nozzle.
 //#define SINGLENOZZLE
 
+/**
+ * Průša MK2 Single Nozzle Multi-Material Multiplexer, and variants.
+ *
+ * This device allows one stepper driver on a control board to drive
+ * two to eight stepper motors, one at a time, in a manner suitable
+ * for extruders.
+ *
+ * This option only allows the multiplexer to switch on tool-change.
+ * Additional options to configure custom E moves are pending.
+ */
+//#define MK2_MULTIPLEXER
+#if ENABLED(MK2_MULTIPLEXER)
+  // Override the default DIO selector pins here, if needed.
+  // Some pins files may provide defaults for these pins.
+  //#define E_MUX0_PIN 40  // Always Required
+  //#define E_MUX1_PIN 42  // Needed for 3 to 8 steppers
+  //#define E_MUX2_PIN 44  // Needed for 5 to 8 steppers
+#endif
+
 // A dual extruder that uses a single stepper motor
 //#define SWITCHING_EXTRUDER
 #if ENABLED(SWITCHING_EXTRUDER)
   #define SWITCHING_EXTRUDER_SERVO_NR 0
-  #define SWITCHING_EXTRUDER_SERVO_ANGLES { 0, 90 } // Angles for E0, E1
+  #define SWITCHING_EXTRUDER_SERVO_ANGLES { 0, 90 } // Angles for E0, E1[, E2, E3]
+  #if EXTRUDERS > 3
+    #define SWITCHING_EXTRUDER_E23_SERVO_NR 1
+  #endif
 #endif
 
 // A dual-nozzle that uses a servomotor to raise/lower one of the nozzles
@@ -408,11 +430,7 @@
  */
 
 #define THERMAL_PROTECTION_HOTENDS // Enable thermal protection for all extruders
-#define THERMAL_PROTECTION_BED     // Enable thermal protection for
-				   // the heated bed
-
-// #define THERMAL_RUNAWAY_DYNAMIC_COOLING // Enable dynamic fan control when
-				        // thermal runaway occurs
+#define THERMAL_PROTECTION_BED     // Enable thermal protection for the heated bed
 
 //===========================================================================
 //============================= Mechanical Settings =========================
@@ -575,7 +593,6 @@
  *
  */
 //#define Z_MIN_PROBE_ENDSTOP
-//#define Z_MIN_PROBE_PIN Z_MAX_PIN
 
 /**
  * Probe Type
@@ -655,17 +672,6 @@
 #define Y_PROBE_OFFSET_FROM_EXTRUDER 0  // Y offset: -front +behind [the nozzle]
 #define Z_PROBE_OFFSET_FROM_EXTRUDER -1   // Z offset: -below +above  [the nozzle]
 
-// BELOW IS FOR THE FRONT MOUNTED SENSOR WITH 3D PRINTED MOUNT
-//#define X_PROBE_OFFSET_FROM_EXTRUDER -28  // X offset: -left  +right  [of the nozzle]
-//#define Y_PROBE_OFFSET_FROM_EXTRUDER -45  // Y offset: -front +behind [the nozzle]
-//#define Z_PROBE_OFFSET_FROM_EXTRUDER 0   // Z offset: -below +above  [the nozzle]
-
-//AND THE LINES BELOW HERE ARE FOR THE OFFICIAL ANET REAR MOUNTED SENSOR
-//#define X_PROBE_OFFSET_FROM_EXTRUDER -1  // X offset: -left  +right  [of the nozzle]
-//#define Y_PROBE_OFFSET_FROM_EXTRUDER  3 // Y offset: -front +behind [the nozzle]
-//#define Z_PROBE_OFFSET_FROM_EXTRUDER 0   // Z offset: -below +above  [the nozzle]
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
 // X and Y axis travel speed (mm/m) between probes
 #define XY_PROBE_SPEED 4000
 
@@ -867,7 +873,7 @@
 
     // Beyond the probed grid, continue the implied tilt?
     // Default is to maintain the height of the nearest edge.
-    // #define EXTRAPOLATE_BEYOND_GRID
+    //#define EXTRAPOLATE_BEYOND_GRID
 
     //
     // Experimental Subdivision of the grid by Catmull-Rom method.
@@ -909,6 +915,7 @@
   #define UBL_PROBE_PT_2_Y 20
   #define UBL_PROBE_PT_3_X 180
   #define UBL_PROBE_PT_3_Y 20
+
   #define UBL_G26_MESH_VALIDATION   // Enable G26 mesh validation
   #define UBL_MESH_EDIT_MOVES_Z     // Sophisticated users prefer no movement of nozzle
 
@@ -987,13 +994,10 @@
 // M500 - stores parameters in EEPROM
 // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
 // M502 - reverts to the default "factory settings".  You still need to store them in EEPROM afterwards if you want to.
-//define this to enable EEPROM support
-#define EEPROM_SETTINGS
-
-#if ENABLED(EEPROM_SETTINGS)
-  // To disable EEPROM Serial responses and decrease program space by ~1700 byte: comment this out:
-  #define EEPROM_CHITCHAT // Please keep turned on if you can.
-#endif
+//
+//#define EEPROM_SETTINGS // Enable for M500 and M501 commands
+//#define DISABLE_M503    // Saves ~2700 bytes of PROGMEM. Disable for release!
+#define EEPROM_CHITCHAT   // Give feedback on EEPROM commands. Disable to save PROGMEM.
 
 //
 // Host Keepalive
@@ -1152,10 +1156,11 @@
  *
  * Select the language to display on the LCD. These languages are available:
  *
- *    en, an, bg, ca, cn, cz, de, el, el-gr, es, eu, fi, fr, gl, hr, it,
- *    kana, kana_utf8, nl, pl, pt, pt_utf8, pt-br, pt-br_utf8, ru, tr, uk, test
+ *    en, an, bg, ca, cn, cz, cz_utf8, de, el, el-gr, es, eu, fi, fr, gl, hr,
+ *    it, kana, kana_utf8, nl, pl, pt, pt_utf8, pt-br, pt-br_utf8, ru, tr, uk,
+ *    zh_CN, zh_TW, test
  *
- * :{ 'en':'English', 'an':'Aragonese', 'bg':'Bulgarian', 'ca':'Catalan', 'cn':'Chinese', 'cz':'Czech', 'de':'German', 'el':'Greek', 'el-gr':'Greek (Greece)', 'es':'Spanish', 'eu':'Basque-Euskera', 'fi':'Finnish', 'fr':'French', 'gl':'Galician', 'hr':'Croatian', 'it':'Italian', 'kana':'Japanese', 'kana_utf8':'Japanese (UTF8)', 'nl':'Dutch', 'pl':'Polish', 'pt':'Portuguese', 'pt-br':'Portuguese (Brazilian)', 'pt-br_utf8':'Portuguese (Brazilian UTF8)', 'pt_utf8':'Portuguese (UTF8)', 'ru':'Russian', 'tr':'Turkish', 'uk':'Ukrainian', 'test':'TEST' }
+ * :{ 'en':'English', 'an':'Aragonese', 'bg':'Bulgarian', 'ca':'Catalan', 'cn':'Chinese', 'cz':'Czech', 'cz_utf8':'Czech (UTF8)', 'de':'German', 'el':'Greek', 'el-gr':'Greek (Greece)', 'es':'Spanish', 'eu':'Basque-Euskera', 'fi':'Finnish', 'fr':'French', 'gl':'Galician', 'hr':'Croatian', 'it':'Italian', 'kana':'Japanese', 'kana_utf8':'Japanese (UTF8)', 'nl':'Dutch', 'pl':'Polish', 'pt':'Portuguese', 'pt-br':'Portuguese (Brazilian)', 'pt-br_utf8':'Portuguese (Brazilian UTF8)', 'pt_utf8':'Portuguese (UTF8)', 'ru':'Russian', 'tr':'Turkish', 'uk':'Ukrainian', 'zh_CN':'Chinese (Simplified)', 'zh_TW':'Chinese (Taiwan)', test':'TEST' }
  */
 #define LCD_LANGUAGE en
 
@@ -1195,11 +1200,6 @@
  */
 //#define ULTRA_LCD   // Character based
 //#define DOGLCD      // Full graphics display
-
-#define ANET_KEYPAD_LCD
-//#define ANET_FULL_GRAPHICS_LCD
-// RepRap Discount (with Anet Adapter wiring see: http://www.thingiverse.com/thing:2103748)
-//#define REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER
 
 /**
  * SD CARD
@@ -1382,9 +1382,7 @@
 // is pressed, a value of 10.0 means 10mm per click.
 //
 //#define REPRAPWORLD_KEYPAD
-//#define REPRAPWORLD_KEYPAD_MOVE_STEP 10.0
-//#define ADC_KEYPAD
-//#define ADC_KEYPAD_DEBUG
+//#define REPRAPWORLD_KEYPAD_MOVE_STEP 1.0
 
 //
 // RigidBot Panel V1.0
@@ -1397,6 +1395,21 @@
 // default with the BQ Hephestos 2 and Witbox 2.
 //
 //#define BQ_LCD_SMART_CONTROLLER
+
+//
+// ANET_10 Controller supported displays.
+//
+#define ANET_KEYPAD_LCD         // Requires ADC_KEYPAD_PIN to be assigned to an analog pin.
+                                  // This LCD is known to be susceptible to electrical interference
+                                  // which scrambles the display.  Pressing any button clears it up.
+//#define ANET_FULL_GRAPHICS_LCD  // Anet 128x64 full graphics lcd with rotary encoder as used on Anet A6
+                                  // A clone of the RepRapDiscount full graphics display but with
+                                  // different pins/wiring (see pins_ANET_10.h).
+
+//
+// LCD for Melzi Card with Graphical LCD
+//
+//#define LCD_FOR_MELZI
 
 //
 // CONTROLLER TYPE: I2C
@@ -1413,6 +1426,9 @@
 
 //
 // Sainsmart YW Robot (LCM1602) LCD Display
+//
+// Note: This controller requires F.Malpartida's LiquidCrystal_I2C library
+// https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home
 //
 //#define LCD_I2C_SAINSMART_YWROBOT
 
@@ -1504,11 +1520,14 @@
 // SkeinForge sends the wrong arc g-codes when using Arc Point as fillet procedure
 //#define SF_ARC_FIX
 
-// Support for the BariCUDA Paste Extruder.
+// Support for the BariCUDA Paste Extruder
 //#define BARICUDA
 
-//define BlinkM/CyzRgb Support
+// Support for BlinkM/CyzRgb
 //#define BLINKM
+
+// Support for PCA9632 PWM LED driver
+//#define PCA9632
 
 /**
  * RGB LED / LED Strip Control
@@ -1547,7 +1566,7 @@
  *  - Change to green once print has finished
  *  - Turn off after the print has finished and the user has pushed a button
  */
-#if ENABLED(BLINKM) || ENABLED(RGB_LED) || ENABLED(RGBW_LED)
+#if ENABLED(BLINKM) || ENABLED(RGB_LED) || ENABLED(RGBW_LED) || ENABLED(PCA9632)
   #define PRINTER_EVENT_LEDS
 #endif
 
